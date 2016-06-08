@@ -84,13 +84,34 @@ static bool ssd130x_write_data(uint8_t data)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void ssd130x_write_stringz(unsigned char * str)
+void ssd130x_write_cmd_stream(uint8_t const * cmds, uint32_t length)
 {
     bool     success = false;
     uint8_t  reg;
-    int      length;
 
-    length = strlen((char*)str);
+    reg = SSD130x_CONTROL_CMD;
+
+    success = twi_master_transfer(SSD130X_I2C_ADDRESS,
+                                  &reg, sizeof(reg),
+                                  TWI_DONT_ISSUE_STOP);
+    if (success == true) {
+
+        success = twi_master_transfer(SSD130X_I2C_ADDRESS,
+                                     (uint8_t*)cmds, length,
+                                     TWI_ISSUE_STOP);
+        if (success == true) {
+            return;
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+void ssd130x_write_data_stream(uint8_t const * data, uint32_t length)
+{
+    bool     success = false;
+    uint8_t  reg;
 
     reg = SSD130x_CONTROL_DATA;
 
@@ -100,14 +121,22 @@ void ssd130x_write_stringz(unsigned char * str)
     if (success == true) {
 
         success = twi_master_transfer(SSD130X_I2C_ADDRESS,
-                                     (uint8_t*)str, length,
+                                     (uint8_t*)data, length,
                                      TWI_ISSUE_STOP);
         if (success == true) {
             return;
         }
     }
 
-    PRINTF("ssd130x write string: reg(%02Xh) FAILED\n", (unsigned) reg);
+    PRINTF("ssd130x write data stream: reg(%02Xh) FAILED\n", (unsigned) reg);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+void ssd130x_write_stringz(char * str)
+{
+    ssd130x_write_data_stream((uint8_t const*) str, strlen(str));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -207,6 +236,94 @@ static bool ssd130x_clean_DDR(void)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+void ssd130x_set_cursor(uint16_t column, uint16_t line)
+{
+    if (column > MAX_COLUMN) return;
+    if (line < MIN_LINE && line > MAX_LINE) return;
+
+    column *= FONT_WIDTH;
+
+    ssd130x_write_cmd(SSD130x_GDDRAM_START_ADDR | (line - 1));
+
+    ssd130x_write_cmd(SSD130x_SETLOWCOLUMN  | ((column >> 0) & 0x0F));
+    ssd130x_write_cmd(SSD130x_SETHIGHCOLUMN | ((column >> 4) & 0x07));
+}
+
+/*---------------------------------------------------------------------------*/
+/* To scroll whole display: start=0, stop=15                                 */
+/*---------------------------------------------------------------------------*/
+void ssd130x_scroll_right(uint8_t start, uint8_t stop)
+{
+    ssd130x_write_cmd(SSD130x_RIGHT_HORIZONTAL_SCROLL);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(start);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(stop);
+    ssd130x_write_cmd(0x01);
+    ssd130x_write_cmd(0xFF);
+    ssd130x_write_cmd(SSD130x_ACTIVATE_SCROLL);
+}
+
+/*---------------------------------------------------------------------------*/
+/* To scroll whole display: start=0, stop=15                                 */
+/*---------------------------------------------------------------------------*/
+void ssd130x_scroll_left(uint8_t start, uint8_t stop)
+{
+    ssd130x_write_cmd(SSD130x_LEFT_HORIZONTAL_SCROLL);
+    ssd130x_write_cmd(0x00);   // dummy byte
+    ssd130x_write_cmd(start);  // start page (PAGE[start])
+    ssd130x_write_cmd(0x00);   // step interval (5-frames)
+    ssd130x_write_cmd(stop);   // stop page (PAGE[stop])
+    ssd130x_write_cmd(0x01);   // scrolling offset (PAGE-1)
+    ssd130x_write_cmd(0xFF);
+    ssd130x_write_cmd(SSD130x_ACTIVATE_SCROLL);
+}
+
+/*---------------------------------------------------------------------------*/
+/* To scroll whole display: start=0, stop=15                                 */
+/*---------------------------------------------------------------------------*/
+void ssd130x_scroll_diag_right(uint8_t start, uint8_t stop)
+{
+    ssd130x_write_cmd(SSD130x_SET_VERTICAL_SCROLL_AREA);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(SSD130x_LCDHEIGHT);
+    ssd130x_write_cmd(SSD130x_VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(start);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(stop);
+    ssd130x_write_cmd(0x01);
+    ssd130x_write_cmd(SSD130x_ACTIVATE_SCROLL);
+}
+
+/*---------------------------------------------------------------------------*/
+/* To scroll whole display: start=0, stop=15                                 */
+/*---------------------------------------------------------------------------*/
+void ssd130x_scroll_diag_left(uint8_t start, uint8_t stop)
+{
+    ssd130x_write_cmd(SSD130x_SET_VERTICAL_SCROLL_AREA);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(SSD130x_LCDHEIGHT);
+    ssd130x_write_cmd(SSD130x_VERTICAL_AND_LEFT_HORIZONTAL_SCROLL);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(start);
+    ssd130x_write_cmd(0x00);
+    ssd130x_write_cmd(stop);
+    ssd130x_write_cmd(0x01);
+    ssd130x_write_cmd(SSD130x_ACTIVATE_SCROLL);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+void ssd130x_scroll_stop(void)
+{
+    ssd130x_write_cmd(SSD130x_DEACTIVATE_SCROLL);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
 void ssd130x_clear(void)
 {
     int i;
@@ -220,17 +337,20 @@ void ssd130x_clear(void)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void ssd130x_set_cursor(uint16_t column, uint16_t line)
+void ssd130x_clear_line(uint16_t line) // line is one-based, not zero-based
 {
-    if (column > MAX_COLUMN) return;
-    if (line < MIN_LINE && line > MAX_LINE) return;
+    int i;
 
-    column *= FONT_WIDTH;
+    if (line < MIN_LINE && line > MAX_LINE) return;
 
     ssd130x_write_cmd(SSD130x_GDDRAM_START_ADDR | (line - 1));
 
-    ssd130x_write_cmd(SSD130x_SETLOWCOLUMN  | ((column >> 0) & 0x0F));
-    ssd130x_write_cmd(SSD130x_SETHIGHCOLUMN | ((column >> 4) & 0x07));
+    ssd130x_write_cmd(SSD130x_SETLOWCOLUMN  | 0);
+    ssd130x_write_cmd(SSD130x_SETHIGHCOLUMN | 0);
+
+    for (i=0; i < SSD130x_LCDWIDTH; i++) {
+        ssd130x_write_data(0x00);
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -296,5 +416,5 @@ void ssd130x_init(void)
 
     nrf_delay_ms(1);
     
-    ssd130x_write_stringz((unsigned char*) "== OLED Blue ==");
+    ssd130x_write_stringz("== OLED Blue ==");
 }
