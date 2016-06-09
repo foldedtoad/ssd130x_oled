@@ -13,8 +13,6 @@
 void ssd130x_init(void);
 void ssd130x_clear(void);
 void ssd130x_clear_line(uint16_t line);
-void ssd130x_write_cmd_stream(uint8_t const * cmds, uint32_t length);
-void ssd130x_write_data_stream(uint8_t const * data, uint32_t length);
 void ssd130x_write_stringz(char * str);
 void ssd130x_set_cursor(uint16_t x, uint16_t y);
 void ssd130x_scroll_right(uint8_t start, uint8_t stop);

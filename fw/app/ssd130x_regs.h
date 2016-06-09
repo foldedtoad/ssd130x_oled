@@ -68,5 +68,6 @@
 
 #define SSD130x_CONTROL_CMD      0x00
 #define SSD130x_CONTROL_DATA     0x40
+#define SSD130x_CONTROL_CO       0x80
 
 #endif /* _SSD130X_REGS_H_ */

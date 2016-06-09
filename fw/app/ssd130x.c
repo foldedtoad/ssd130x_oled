@@ -34,6 +34,9 @@ extern ble_oled_t  g_oled_service;  // see main.c
 
 #define SSD130X_I2C_ADDRESS      0x78
 
+//static uint8_t  m_vccstate = SSD130x_EXTERNALVCC;
+static uint8_t  m_vccstate = SSD130x_SWITCHCAPVCC;
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
@@ -81,59 +84,21 @@ static bool ssd130x_write_data(uint8_t data)
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
-void ssd130x_write_cmd_stream(uint8_t const * cmds, uint32_t length)
+void ssd130x_write_stringz(char * stringz)
 {
-    bool     success = false;
-    uint8_t  reg;
+    unsigned char * ch;
+    uint8_t         buffer [sizeof(SSD130x_chardef_t) + 1];
 
-    reg = SSD130x_CONTROL_CMD;
+    buffer[0] = SSD130x_CONTROL_CO + SSD130x_CONTROL_DATA;
 
-    success = twi_master_transfer(SSD130X_I2C_ADDRESS,
-                                  &reg, sizeof(reg),
-                                  TWI_DONT_ISSUE_STOP);
-    if (success == true) {
+    for (ch = (unsigned char*)stringz; *ch; ++ch) {
 
-        success = twi_master_transfer(SSD130X_I2C_ADDRESS,
-                                     (uint8_t*)cmds, length,
-                                     TWI_ISSUE_STOP);
-        if (success == true) {
-            return;
-        }
+        memcpy(&buffer[1], &SSD130x_font[*ch], sizeof(SSD130x_chardef_t));
+
+        twi_master_transfer(SSD130X_I2C_ADDRESS,
+                            (uint8_t*) &buffer, sizeof(buffer),
+                            TWI_ISSUE_STOP);
     }
-}
-
-/*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-void ssd130x_write_data_stream(uint8_t const * data, uint32_t length)
-{
-    bool     success = false;
-    uint8_t  reg;
-
-    reg = SSD130x_CONTROL_DATA;
-
-    success = twi_master_transfer(SSD130X_I2C_ADDRESS,
-                                  &reg, sizeof(reg),
-                                  TWI_DONT_ISSUE_STOP);
-    if (success == true) {
-
-        success = twi_master_transfer(SSD130X_I2C_ADDRESS,
-                                     (uint8_t*)data, length,
-                                     TWI_ISSUE_STOP);
-        if (success == true) {
-            return;
-        }
-    }
-
-    PRINTF("ssd130x write data stream: reg(%02Xh) FAILED\n", (unsigned) reg);
-}
-
-/*---------------------------------------------------------------------------*/
-/*                                                                           */
-/*---------------------------------------------------------------------------*/
-void ssd130x_write_stringz(char * str)
-{
-    ssd130x_write_data_stream((uint8_t const*) str, strlen(str));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -151,6 +116,12 @@ bool ssd130x_init_cmds(void)
     // Set Display Offset
     ssd130x_write_cmd(SSD130x_SETDISPLAYOFFSET);
     ssd130x_write_cmd(0x1F);
+
+    ssd130x_write_cmd(SSD130x_CHARGEPUMP);
+    if (m_vccstate == SSD130x_EXTERNALVCC)
+        ssd130x_write_cmd(0x10);
+    else
+        ssd130x_write_cmd(0x14);
 
     // Set Segment Remap
     ssd130x_write_cmd(SSD130x_SEGREMAP | 0x01);
@@ -414,5 +385,8 @@ void ssd130x_init(void)
     nrf_delay_ms(1);
     
     ssd130x_clear_line(1);
+
+    nrf_delay_ms(1);
+
     ssd130x_write_stringz("== OLED Blue ==");
 }

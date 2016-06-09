@@ -1102,6 +1102,7 @@ int main(void)
     ssd130x_init();
     adc_configure();
 
+#if 1 // set to 0 for development/debugging
     PUTS("Starting BLE services");
 
     gap_params_init();
@@ -1114,6 +1115,7 @@ int main(void)
 
     // Start execution
     advertising_start();
+#endif
 
     // Enter main loop
     for (;;) {
