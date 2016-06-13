@@ -8,8 +8,8 @@
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
-#define SSD130x_LCDWIDTH    96
-#define SSD130x_LCDHEIGHT   16
+#define SSD130x_LCDWIDTH    132
+#define SSD130x_LCDHEIGHT   32
 
 #define MIN_COLUMN          0
 #define MAX_COLUMN          (SSD130x_LCDWIDTH - 1)

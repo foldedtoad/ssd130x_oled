@@ -20,7 +20,8 @@
 #include "ble_oled.h"
 #include "dbglog.h"
 
-#include "font5x7.h"
+//#include "font5x7.h"
+#include "font8x8.h"
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -89,11 +90,16 @@ void ssd130x_write_stringz(char * stringz)
     unsigned char * ch;
     uint8_t         buffer [sizeof(SSD130x_chardef_t) + 1];
 
-    buffer[0] = SSD130x_CONTROL_CO + SSD130x_CONTROL_DATA;
+    buffer[0] = SSD130x_CONTROL_DATA;
 
     for (ch = (unsigned char*)stringz; *ch; ++ch) {
 
-        memcpy(&buffer[1], &SSD130x_font[*ch], sizeof(SSD130x_chardef_t));
+        if (*ch < sizeof(SSD130x_font)/sizeof(SSD130x_chardef_t)) {
+            memcpy(&buffer[1], &SSD130x_font[*ch], sizeof(SSD130x_chardef_t));
+        }
+        else {
+            memcpy(&buffer[1], &SSD130x_font['.'], sizeof(SSD130x_chardef_t));
+        }
 
         twi_master_transfer(SSD130X_I2C_ADDRESS,
                             (uint8_t*) &buffer, sizeof(buffer),
@@ -109,68 +115,61 @@ bool ssd130x_init_cmds(void)
     // Display Off
     ssd130x_write_cmd(SSD130x_DISPLAYOFF);
 
+    // Frame Rate Setting
+    ssd130x_write_cmd(SSD130x_SETDISPLAYCLOCKDIV);
+    ssd130x_write_cmd(0x80);
+
     // MUX Ratio
     ssd130x_write_cmd(SSD130x_SETMULTIPLEX);
     ssd130x_write_cmd(0x0F);
 
     // Set Display Offset
     ssd130x_write_cmd(SSD130x_SETDISPLAYOFFSET);
-    ssd130x_write_cmd(0x1F);
-
-    ssd130x_write_cmd(SSD130x_CHARGEPUMP);
-    if (m_vccstate == SSD130x_EXTERNALVCC)
-        ssd130x_write_cmd(0x10);
-    else
-        ssd130x_write_cmd(0x14);
-
-    // Set Segment Remap
-    ssd130x_write_cmd(SSD130x_SEGREMAP | 0x01);
-
-    // Set COM Output Scan Direction
-    ssd130x_write_cmd(SSD130x_COMSCANINC);
-
-    // Set Normal Display
-    ssd130x_write_cmd(SSD130x_NORMALDISPLAY);
+    ssd130x_write_cmd(0x00);
 
     // Display Start Line
     ssd130x_write_cmd(SSD130x_SETSTARTLINE | 0);
 
-    // Entire Display Mode Off
-    ssd130x_write_cmd(SSD130x_DISPLAYALLON_RESUME);
+    ssd130x_write_cmd(SSD130x_CHARGEPUMP);
+    if (m_vccstate == SSD130x_EXTERNALVCC)
+        ssd130x_write_cmd(0x10);  // Disable Charge Pump
+    else
+        ssd130x_write_cmd(0x14);  // Enable Charge Pump
 
-    // Contrast Setting
-    ssd130x_write_cmd(SSD130x_SETCONTRAST);
-    ssd130x_write_cmd(0x39);
+    // Set Memory Addressing Mode
+    ssd130x_write_cmd(SSD130x_MEMORYMODE);
+    ssd130x_write_cmd(0x00);
 
-    // Set Pre-charge Period
-    ssd130x_write_cmd(SSD130x_SETPRECHARGE);
-    ssd130x_write_cmd(0x11);
+    // Set Segment Remap:  Addr 127 --> SEG0
+    ssd130x_write_cmd(SSD130x_SEGREMAP | 0x01);
 
-    // Frame Rate Setting
-    ssd130x_write_cmd(SSD130x_SETDISPLAYCLOCKDIV);
-    ssd130x_write_cmd(0xC4);
+    // Set COM Output Scan Direction
+    ssd130x_write_cmd(SSD130x_COMSCANDEC);
 
     // Set SEG Pins Hardware Cfg
     ssd130x_write_cmd(SSD130x_SETCOMPINS);
-    ssd130x_write_cmd(0x12);
+    ssd130x_write_cmd(0x02);
+
+    // Contrast Setting
+    ssd130x_write_cmd(SSD130x_SETCONTRAST);
+    ssd130x_write_cmd(0x8F);
+
+    // Set Pre-charge Period
+    ssd130x_write_cmd(SSD130x_SETPRECHARGE);
+    if (m_vccstate == SSD130x_EXTERNALVCC)
+        ssd130x_write_cmd(0x22);
+    else
+        ssd130x_write_cmd(0xF1);
 
     // Set VCOMH Deselect Level
     ssd130x_write_cmd(SSD130x_SETVCOMDESELECT);
-    ssd130x_write_cmd(0x20);
+    ssd130x_write_cmd(0x40);
 
-    // Set Memory Addressing Mode : Page Address mode
-    ssd130x_write_cmd(SSD130x_MEMORYMODE);
-    ssd130x_write_cmd(2);
+    // Entire Display Mode Off
+    ssd130x_write_cmd(SSD130x_DISPLAYALLON_RESUME);
 
-    // Set Column Address
-    ssd130x_write_cmd(SSD130x_SETCOLUMNADDRESS);
-    ssd130x_write_cmd(MIN_COLUMN);
-    ssd130x_write_cmd(MAX_COLUMN);
-
-    // Set Page Address
-    ssd130x_write_cmd(SSD130x_SETPAGEADDRESS);
-    ssd130x_write_cmd(MIN_LINE - 1);
-    ssd130x_write_cmd(MAX_LINE - 1);
+    // Set Normal Display
+    ssd130x_write_cmd(SSD130x_NORMALDISPLAY);
 
     // Display On
     ssd130x_write_cmd(SSD130x_DISPLAYON);
@@ -372,21 +371,14 @@ void ssd130x_init(void)
 
     ssd130x_clean_DDR();
 
-    nrf_delay_ms(1);
-
     /* Clear display */
     ssd130x_clear();
-    
-    nrf_delay_ms(1);
 
     ssd130x_set_cursor(0, 1);
+    ssd130x_write_stringz("== OLED*Blue ==");
+
     ssd130x_set_cursor(0, 2);
+    ssd130x_write_stringz("Robin Callender");
 
-    nrf_delay_ms(1);
-    
-    ssd130x_clear_line(1);
-
-    nrf_delay_ms(1);
-
-    ssd130x_write_stringz("== OLED Blue ==");
+    //ssd130x_scroll_right(0, 3);
 }
