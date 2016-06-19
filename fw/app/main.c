@@ -35,7 +35,7 @@
 #include "boards.h"
 #include "pstorage_platform.h"
 #include "ble_oled.h"
-#include "ssd130x.h"
+#include "oled.h"
 #include "dbglog.h"
 #include "uart.h"
 
@@ -1099,7 +1099,7 @@ int main(void)
     leds_init();
     timers_init();
     gpiote_init();
-    ssd130x_init();
+    oled_init();
     adc_configure();
 
 #if 1 // set to 0 for development/debugging

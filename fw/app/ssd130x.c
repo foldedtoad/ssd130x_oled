@@ -370,21 +370,4 @@ void ssd130x_init(void)
     nrf_delay_ms(1);
 
     ssd130x_clean_DDR();
-
-    /* Clear display */
-    ssd130x_clear();
-
-    ssd130x_set_cursor(0, 1);
-    ssd130x_write_stringz("== OLED*Blue ==");
-
-    ssd130x_set_cursor(0, 2);
-    ssd130x_write_stringz("Robin Callender");
-
-    ssd130x_set_cursor(0, 3);
-    ssd130x_write_stringz("line 3");
-
-    ssd130x_set_cursor(0, 4);
-    ssd130x_write_stringz("line 4");
-
-    //ssd130x_scroll_diag_right(0, 3);
 }
