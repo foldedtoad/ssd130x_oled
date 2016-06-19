@@ -121,14 +121,14 @@ bool ssd130x_init_cmds(void)
 
     // MUX Ratio
     ssd130x_write_cmd(SSD130x_SETMULTIPLEX);
-    ssd130x_write_cmd(0x0F);
+    ssd130x_write_cmd(0x1F);
 
     // Set Display Offset
     ssd130x_write_cmd(SSD130x_SETDISPLAYOFFSET);
     ssd130x_write_cmd(0x00);
 
     // Display Start Line
-    ssd130x_write_cmd(SSD130x_SETSTARTLINE | 0);
+    ssd130x_write_cmd(SSD130x_SETSTARTLINE | 0x00);
 
     ssd130x_write_cmd(SSD130x_CHARGEPUMP);
     if (m_vccstate == SSD130x_EXTERNALVCC)
@@ -380,5 +380,11 @@ void ssd130x_init(void)
     ssd130x_set_cursor(0, 2);
     ssd130x_write_stringz("Robin Callender");
 
-    //ssd130x_scroll_right(0, 3);
+    ssd130x_set_cursor(0, 3);
+    ssd130x_write_stringz("line 3");
+
+    ssd130x_set_cursor(0, 4);
+    ssd130x_write_stringz("line 4");
+
+    //ssd130x_scroll_diag_right(0, 3);
 }
