@@ -19,6 +19,11 @@
 #define OLED_UUID_SERVICE            0xfad0
 #define OLED_UUID_DISPLAY_CHAR       0xfad1
 
+/*
+ *  Maximum display length:  BLE packet size and OLED line width common.
+ */
+#define MAX_DISPLAY_LENGTH  15
+
 // Forward declaration of the ble_oled_t type. 
 typedef struct _ble_oled   ble_oled_t;
 

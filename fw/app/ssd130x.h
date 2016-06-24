@@ -7,8 +7,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MIN_LINE         1
-#define MAX_LINE         (SSD130x_LCDHEIGHT / FONT_HEIGHT)
+extern const int min_line;
+extern const int max_line;
+extern const int max_line_width;
 
 void ssd130x_init(void);
 void ssd130x_clear(void);

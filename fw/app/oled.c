@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "nrf.h"
 #include "nrf_gpio.h"
@@ -16,10 +17,36 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
+/*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
 void oled_puts(char * stringz)
 {
-    if (strlen(stringz) <= MAX_OLED_STRING_LENGTH) {
-        ssd130x_write_stringz(stringz);       
+    char buffer [max_line_width + 1];
+
+    int length = strlen(stringz);
+    int seglen;
+
+    ssd130x_clear();
+
+    for (int line = min_line; line <= max_line; line++) {
+
+        if (length <= 0) 
+            break;
+
+        seglen = MIN(length, max_line_width);
+
+        memset(buffer, 0, sizeof(buffer));
+        strncpy(buffer, stringz, seglen);
+
+        ssd130x_set_cursor(0, line);
+        ssd130x_write_stringz(buffer); 
+
+        stringz += max_line_width;
+        length  -= max_line_width;        
     }
 }
 
@@ -28,19 +55,7 @@ void oled_puts(char * stringz)
 /*----------------------------------------------------------------------------*/
 void oled_test(void)
 {
-    ssd130x_clear();
-
-    ssd130x_set_cursor(0, 1);
-    ssd130x_write_stringz("== OLED*Blue ==");
-
-    ssd130x_set_cursor(0, 2);
-    ssd130x_write_stringz("Robin Callender");
-
-    ssd130x_set_cursor(0, 3);
-    ssd130x_write_stringz("line 3");
-
-    ssd130x_set_cursor(0, 4);
-    ssd130x_write_stringz("line 4");
+    oled_puts("This is a long test message to drive the OLED display.");
 }
 
 /*----------------------------------------------------------------------------*/

@@ -13,12 +13,11 @@
 
 #include "config.h"
 #include "ble_oled.h"
-#include "ssd130x.h"
+#include "oled.h"
 #include "dbglog.h"
 #include "ble_dfu.h"
 
-
-static uint32_t         m_display;
+static char  m_display[MAX_DISPLAY_LENGTH];
 
 /* 
  *  Function for handling the Connect event.
@@ -50,11 +49,13 @@ static void on_disconnect(ble_oled_t * p_oled, ble_evt_t * p_ble_evt)
  */
 static void on_oled_display_write(ble_oled_t * p_oled, ble_gatts_evt_write_t * p_evt_write)
 {
-    uint32_t value;
+    char * string = (char*) &p_evt_write->data;
 
-    value = *(uint32_t*) p_evt_write->data;
+    if (strlen(string) >= MAX_DISPLAY_LENGTH) {
+        return;
+    }
 
-    PRINTF("write Display value: %u\n",(unsigned) value);
+    oled_puts(string);
 }
 
 /*
@@ -155,7 +156,7 @@ static uint32_t display_char_add(ble_oled_t * p_oled)
     desc_md.vloc = BLE_GATTS_VLOC_STACK;
 
     memset(&char_pf, 0, sizeof(char_pf));
-    char_pf.format = BLE_GATT_CPF_FORMAT_UINT32;
+    char_pf.format = BLE_GATT_CPF_FORMAT_UTF8S;
 
     memset(&char_md, 0, sizeof(char_md));
     char_md.char_props.read         = 1;
@@ -202,7 +203,7 @@ uint32_t ble_oled_init(ble_oled_t * p_oled)
     ble_uuid_t ble_uuid;
 
     // Initialize service structure
-    p_oled->conn_handle    = BLE_CONN_HANDLE_INVALID;
+    p_oled->conn_handle = BLE_CONN_HANDLE_INVALID;
 
     // Add service
     ble_uuid128_t base_uuid = {OLED_UUID_BASE};

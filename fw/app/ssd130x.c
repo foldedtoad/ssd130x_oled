@@ -20,8 +20,20 @@
 #include "ble_oled.h"
 #include "dbglog.h"
 
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
 //#include "font5x7.h"
 #include "font8x8.h"
+
+#define MIN_LINE         1
+#define MAX_LINE         (SSD130x_LCDHEIGHT / FONT_HEIGHT)
+#define MAX_LINE_WIDTH   (SSD130x_LCDWIDTH/ FONT_WIDTH)
+
+const int min_line = MIN_LINE;
+const int max_line = MAX_LINE;
+
+const int max_line_width = (MAX_LINE_WIDTH - 1);
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
