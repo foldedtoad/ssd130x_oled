@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "nrf.h"
+#include "nrf_delay.h"
 #include "nrf_gpio.h"
 
 #include "oled.h"
@@ -30,8 +31,6 @@ void oled_puts(char * stringz)
     int length = strlen(stringz);
     int seglen;
 
-    ssd130x_clear();
-
     for (int line = min_line; line <= max_line; line++) {
 
         if (length <= 0) 
@@ -42,6 +41,7 @@ void oled_puts(char * stringz)
         memset(buffer, 0, sizeof(buffer));
         strncpy(buffer, stringz, seglen);
 
+        ssd130x_clear_line(line);
         ssd130x_set_cursor(0, line);
         ssd130x_write_stringz(buffer); 
 

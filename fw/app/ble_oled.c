@@ -13,11 +13,12 @@
 
 #include "config.h"
 #include "ble_oled.h"
-#include "oled.h"
+#include "gather.h"
 #include "dbglog.h"
 #include "ble_dfu.h"
 
-static char  m_display[MAX_DISPLAY_LENGTH];
+
+static char  m_segment [sizeof(segment_t)];
 
 /* 
  *  Function for handling the Connect event.
@@ -49,13 +50,9 @@ static void on_disconnect(ble_oled_t * p_oled, ble_evt_t * p_ble_evt)
  */
 static void on_oled_display_write(ble_oled_t * p_oled, ble_gatts_evt_write_t * p_evt_write)
 {
-    char * string = (char*) &p_evt_write->data;
+    char * segment = (char*) &p_evt_write->data;
 
-    if (strlen(string) >= MAX_DISPLAY_LENGTH) {
-        return;
-    }
-
-    oled_puts(string);
+    gather_segments(segment);
 }
 
 /*
@@ -71,13 +68,8 @@ static void on_write(ble_oled_t * p_oled, ble_evt_t * p_ble_evt)
     switch (p_evt_write->context.char_uuid.uuid) {
 
         case OLED_UUID_DISPLAY_CHAR:
-            if (p_evt_write->len != sizeof(uint16_t)) {
-                //printf("on_write: bad len: %d\n", p_evt_write->len);
-                break;
-            }
             on_oled_display_write(p_oled, p_evt_write);
             break;
-
 
         case OLED_UUID_SERVICE:
         case BLE_UUID_BATTERY_LEVEL_CHAR:
@@ -183,10 +175,10 @@ static uint32_t display_char_add(ble_oled_t * p_oled)
     memset(&attr_char_value, 0, sizeof(attr_char_value));
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.init_len     = sizeof(m_display);
+    attr_char_value.init_len     = sizeof(m_segment);
     attr_char_value.init_offs    = 0;
-    attr_char_value.max_len      = sizeof(m_display);
-    attr_char_value.p_value      = (uint8_t*) &m_display;
+    attr_char_value.max_len      = sizeof(m_segment);
+    attr_char_value.p_value      = (uint8_t*) &m_segment;
 
     return sd_ble_gatts_characteristic_add(p_oled->service_handle,
                                            &char_md,

@@ -89,6 +89,7 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 
 C_SOURCE_FILES += ../main.c
 C_SOURCE_FILES += ../ble_oled.c
+C_SOURCE_FILES += ../gather.c
 C_SOURCE_FILES += ../oled.c
 C_SOURCE_FILES += ../ssd130x.c
 C_SOURCE_FILES += ../printf.c

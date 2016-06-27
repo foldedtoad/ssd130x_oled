@@ -11,6 +11,7 @@
 
 #include "ble.h"
 #include "ble_srv_common.h"
+#include "gather.h"
 
 //
 //  0000XXXX-0eea-67d1-a44a-bb3ce36fced6
@@ -18,11 +19,6 @@
 #define OLED_UUID_BASE {0xd6, 0xce, 0x6f, 0xe3, 0x3c, 0xbb, 0x4a, 0xa4, 0xd1, 0x67, 0xea, 0x0e, 0x00, 0x00, 0x00, 0x00}
 #define OLED_UUID_SERVICE            0xfad0
 #define OLED_UUID_DISPLAY_CHAR       0xfad1
-
-/*
- *  Maximum display length:  BLE packet size and OLED line width common.
- */
-#define MAX_DISPLAY_LENGTH  15
 
 // Forward declaration of the ble_oled_t type. 
 typedef struct _ble_oled   ble_oled_t;
